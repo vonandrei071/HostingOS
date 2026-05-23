@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Page Replacement Simulator</title>
+  <title>Page Replacement OS</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -247,12 +247,12 @@
   <!-- INPUT BOX -->
   <div class="box">
     <label>Reference String</label>
-    <input type="text" id="refString" placeholder="e.g. 7 0 1 2 0 3" autocomplete="off" oninput="autoFormat(this)">
-    <div class="hint">Just type digits — spaces are added automatically. Use a space between multi-digit pages (e.g. 12 3).</div>
+    <input type="text" id="refString" placeholder="ex. 7 0 1 2 0 3" autocomplete="off" oninput="autoFormat(this)">
+    <div class="hint">Spaces are added automatically but please add a space between multi-digit pages (e.g. 12 3).</div>
     <div class="error-msg" id="refError"></div>
 
     <label>Number of Frames</label>
-    <input type="number" id="numFrames" placeholder="e.g. 3" min="1" max="10" value="3">
+    <input type="number" id="numFrames" placeholder="ex. 3" min="1" max="10">
     <div class="hint">How many memory frames (1–10)</div>
     <div class="error-msg" id="frameError"></div>
 
