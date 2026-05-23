@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Page Replacement OS Case Study</title>
+  <title>Page Replacement Simulator</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -242,17 +242,17 @@
 <body>
 
 <div class="container">
-  <h1>Page Replacement OS</h1>
+  <h1>Page Replacement Simulator</h1>
 
   <!-- INPUT BOX -->
   <div class="box">
     <label>Reference String</label>
-    <input type="text" id="refString" placeholder="ex, 7 0 1 2 0 3" autocomplete="off" oninput="autoFormat(this)">
-    <div class="hint">Spaces are added automatically, but please include a space between multi-digit pages (ex. 67 21).</div>
+    <input type="text" id="refString" placeholder="e.g. 7 0 1 2 0 3" autocomplete="off" oninput="autoFormat(this)">
+    <div class="hint">Just type digits — spaces are added automatically. Use a space between multi-digit pages (e.g. 12 3).</div>
     <div class="error-msg" id="refError"></div>
 
     <label>Number of Frames</label>
-    <input type="number" id="numFrames" placeholder="ex. 3" min="1" max="10">
+    <input type="number" id="numFrames" placeholder="e.g. 3" min="1" max="10" value="3">
     <div class="hint">How many memory frames (1–10)</div>
     <div class="error-msg" id="frameError"></div>
 
@@ -266,6 +266,7 @@
 
     <div class="btn-row">
       <button class="run-btn" onclick="runSimulation()">Run Simulation</button>
+      <button class="small-btn" onclick="randomize()">Random</button>
       <button class="small-btn" onclick="clearAll()">Clear</button>
     </div>
   </div>
@@ -344,6 +345,20 @@
     document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('visible'));
     document.querySelectorAll('input').forEach(i => i.classList.remove('error'));
     document.getElementById('results').style.display = 'none';
+  }
+
+  function randomize() {
+    const len = Math.floor(Math.random() * 8) + 8;
+    const max = Math.floor(Math.random() * 4) + 5;
+    const pages = Array.from({ length: len }, () => Math.floor(Math.random() * max));
+    document.getElementById('refString').value = pages.join(' ');
+    document.getElementById('numFrames').value = Math.floor(Math.random() * 3) + 2;
+    const algos = [['FIFO', 0], ['OPT', 1], ['LRU', 2]];
+    const [pick, idx] = algos[Math.floor(Math.random() * 3)];
+    const btns = document.querySelectorAll('.algo-btn');
+    document.querySelectorAll('.algo-btn').forEach(b => b.classList.remove('selected'));
+    btns[idx].classList.add('selected');
+    selectedAlgo = pick;
   }
 
   function validate() {
