@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Replacement OS Case Study</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .box {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #444;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+      margin-bottom: 4px;
+    }
+
+    input.error {
+      border-color: red;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .error-msg {
+      color: red;
+      font-size: 12px;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .error-msg.visible {
+      display: block;
+    }
+
+    .algo-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .algo-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #ccc;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .algo-btn.selected {
+      border-color: #4a90d9;
+      background-color: #e8f0fb;
+      color: #4a90d9;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    button.run-btn {
+      flex: 1;
+      padding: 10px;
+      background-color: #4a90d9;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button.run-btn:hover {
+      background-color: #357abd;
+    }
+
+    button.small-btn {
+      padding: 10px 16px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button.small-btn:hover {
+      background: #f5f5f5;
+    }
+
+    /* Stats */
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      flex: 1;
+      text-align: center;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 14px;
+    }
+
+    .stat-box .num {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .stat-box .lbl {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .stat-box.faults .num { color: #e74c3c; }
+    .stat-box.hits .num   { color: #27ae60; }
+    .stat-box.ratio .num  { color: #4a90d9; }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    td {
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    tr.row-fault { background-color: #fff0f0; }
+    tr.row-hit   { background-color: #f0fff4; }
+
+    .cell-new {
+      background-color: #fef3cd;
+      border-radius: 3px;
+      display: inline-block;
+      padding: 2px 8px;
+      font-weight: bold;
+      color: #856404;
+    }
+
+    .cell-page {
+      display: inline-block;
+      padding: 2px 8px;
+    }
+
+    .cell-empty {
+      color: #bbb;
+    }
+
+    .badge-hit {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .badge-fault {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    #results { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Page Replacement OS</h1>
+
+  <!-- INPUT BOX -->
+  <div class="box">
+    <label>Reference String</label>
+    <input type="text" id="refString" placeholder="ex, 7 0 1 2 0 3" autocomplete="off" oninput="autoFormat(this)">
+    <div class="hint">Spaces are added automatically, but please include a space between multi-digit pages (ex. 67 21).</div>
+    <div class="error-msg" id="refError"></div>
+
+    <label>Number of Frames</label>
+    <input type="number" id="numFrames" placeholder="ex. 3" min="1" max="10">
+    <div class="hint">How many memory frames (1–10)</div>
+    <div class="error-msg" id="frameError"></div>
+
+    <label>Algorithm</label>
+    <div class="algo-buttons">
+      <button class="algo-btn" onclick="selectAlgo('FIFO', this)">FIFO</button>
+      <button class="algo-btn" onclick="selectAlgo('OPT', this)">Optimal</button>
+      <button class="algo-btn" onclick="selectAlgo('LRU', this)">LRU</button>
+    </div>
+    <div class="error-msg" id="algoError"></div>
+
+    <div class="btn-row">
+      <button class="run-btn" onclick="runSimulation()">Run Simulation</button>
+      <button class="small-btn" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="stats-row">
+      <div class="stat-box faults">
+        <div class="num" id="statFaults">0</div>
+        <div class="lbl">Page Faults</div>
+      </div>
+      <div class="stat-box hits">
+        <div class="num" id="statHits">0</div>
+        <div class="lbl">Page Hits</div>
+      </div>
+      <div class="stat-box ratio">
+        <div class="num" id="statRatio">0%</div>
+        <div class="lbl">Hit Ratio</div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="legend">
+        <span><span class="dot" style="background:#f8d7da;border:1px solid #e74c3c;"></span> Page Fault (red row)</span>
+        <span><span class="dot" style="background:#d4edda;border:1px solid #27ae60;"></span> Page Hit (green row)</span>
+        <span><span class="dot" style="background:#fef3cd;border:1px solid #856404;"></span> Newly loaded page</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let selectedAlgo = null;
+
+  function autoFormat(input) {
+    const pos = input.selectionStart;
+    const before = input.value.substring(0, pos);
+    const raw = input.value.replace(/[^\d\s]/g, '');
+    const hasSpaces = /\s/.test(raw);
+    let formatted;
+    if (!hasSpaces) {
+      formatted = raw.replace(/\s/g, '').split('').join(' ');
+    } else {
+      formatted = raw.replace(/\s+/g, ' ').replace(/^\s/, '');
+    }
+    if (formatted !== input.value) {
+      const digitsBeforeCursor = before.replace(/\s/g, '').length;
+      input.value = formatted;
+      let count = 0, newPos = 0;
+      for (let i = 0; i < formatted.length; i++) {
+        if (formatted[i] !== ' ') count++;
+        if (count === digitsBeforeCursor) { newPos = i + 1; break; }
+      }
+      input.setSelectionRange(newPos, newPos);
+    }
+  }
+
+  function selectAlgo(algo, btn) {
+    selectedAlgo = algo;
+    document.querySelectorAll('.algo-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('algoError').classList.remove('visible');
+  }
+
+  function clearAll() {
+    document.getElementById('refString').value = '';
+    document.getElementById('numFrames').value = '3';
+    document.querySelectorAll('.algo-btn').forEach(b => b.classList.remove('selected'));
+    selectedAlgo = null;
+    document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('visible'));
+    document.querySelectorAll('input').forEach(i => i.classList.remove('error'));
+    document.getElementById('results').style.display = 'none';
+  }
+
+  function validate() {
+    let ok = true;
+    const refEl = document.getElementById('refString');
+    const frameEl = document.getElementById('numFrames');
+    ['refError','frameError','algoError'].forEach(id => document.getElementById(id).classList.remove('visible'));
+    [refEl, frameEl].forEach(el => el.classList.remove('error'));
+
+    const raw = refEl.value.trim();
+    if (!raw) {
+      showErr('refError', 'Please enter a reference string.', refEl); ok = false;
+    } else {
+      const parts = raw.split(/\s+/);
+      if (parts.some(p => !/^\d+$/.test(p))) {
+        showErr('refError', 'Only numbers are allowed.', refEl); ok = false;
+      }
+    }
+
+    const n = parseInt(frameEl.value);
+    if (!frameEl.value || isNaN(n) || n < 1 || n > 10) {
+      showErr('frameError', 'Frames must be between 1 and 10.', frameEl); ok = false;
+    }
+
+    if (!selectedAlgo) {
+      showErr('algoError', 'Please select an algorithm.', null); ok = false;
+    }
+
+    return ok;
+  }
+
+  function showErr(id, msg, input) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.add('visible');
+    if (input) input.classList.add('error');
+  }
+
+  function runFIFO(pages, nFrames) {
+    const frames = [], steps = [];
+    let ptr = 0;
+    for (const page of pages) {
+      const hit = frames.includes(page);
+      let newPage = null;
+      if (!hit) {
+        if (frames.length < nFrames) { frames.push(page); }
+        else { frames[ptr] = page; ptr = (ptr + 1) % nFrames; }
+        newPage = page;
+      }
+      steps.push({ page, frames: [...frames], hit, newPage });
+    }
+    return steps;
+  }
+
+  function runLRU(pages, nFrames) {
+    const frames = [], steps = [], recent = [];
+    for (const page of pages) {
+      const hit = frames.includes(page);
+      let newPage = null;
+      if (!hit) {
+        if (frames.length < nFrames) { frames.push(page); }
+        else {
+          let lruIdx = -1, lruTime = Infinity;
+          for (let i = 0; i < frames.length; i++) {
+            const t = recent.lastIndexOf(frames[i]);
+            if (t < lruTime) { lruTime = t; lruIdx = i; }
+          }
+          frames[lruIdx] = page;
+        }
+        newPage = page;
+      }
+      recent.push(page);
+      steps.push({ page, frames: [...frames], hit, newPage });
+    }
+    return steps;
+  }
+
+  function runOptimal(pages, nFrames) {
+    const frames = [], steps = [];
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const hit = frames.includes(page);
+      let newPage = null;
+      if (!hit) {
+        if (frames.length < nFrames) { frames.push(page); }
+        else {
+          let replaceIdx = -1, farthest = -1;
+          for (let j = 0; j < frames.length; j++) {
+            const nextUse = pages.indexOf(frames[j], i + 1);
+            const dist = nextUse === -1 ? Infinity : nextUse;
+            if (dist > farthest) { farthest = dist; replaceIdx = j; }
+          }
+          frames[replaceIdx] = page;
+        }
+        newPage = page;
+      }
+      steps.push({ page, frames: [...frames], hit, newPage });
+    }
+    return steps;
+  }
+
+  function runSimulation() {
+    if (!validate()) return;
+
+    const pages = document.getElementById('refString').value.trim().split(/\s+/).map(Number);
+    const nFrames = parseInt(document.getElementById('numFrames').value);
+
+    let steps;
+    if (selectedAlgo === 'FIFO') steps = runFIFO(pages, nFrames);
+    else if (selectedAlgo === 'LRU') steps = runLRU(pages, nFrames);
+    else steps = runOptimal(pages, nFrames);
+
+    const faults = steps.filter(s => !s.hit).length;
+    const hits = steps.filter(s => s.hit).length;
+    const ratio = pages.length ? ((hits / pages.length) * 100).toFixed(1) : 0;
+
+    document.getElementById('statFaults').textContent = faults;
+    document.getElementById('statHits').textContent = hits;
+    document.getElementById('statRatio').textContent = ratio + '%';
+
+    buildTable(steps, nFrames);
+    document.getElementById('results').style.display = 'block';
+  }
+
+  function buildTable(steps, nFrames) {
+    const head = document.getElementById('tableHead');
+    const body = document.getElementById('tableBody');
+
+    let hRow = '<tr><th>Step</th><th>Page</th>';
+    for (let i = 0; i < nFrames; i++) hRow += `<th>Frame ${i + 1}</th>`;
+    hRow += '<th>Status</th></tr>';
+    head.innerHTML = hRow;
+
+    let rows = '';
+    steps.forEach((s, idx) => {
+      rows += `<tr class="${s.hit ? 'row-hit' : 'row-fault'}">`;
+      rows += `<td>${idx + 1}</td><td><b>${s.page}</b></td>`;
+      for (let f = 0; f < nFrames; f++) {
+        const val = s.frames[f] !== undefined ? s.frames[f] : null;
+        if (val === null) {
+          rows += `<td><span class="cell-empty">-</span></td>`;
+        } else if (val === s.newPage && !s.hit) {
+          rows += `<td><span class="cell-new">${val}</span></td>`;
+        } else {
+          rows += `<td><span class="cell-page">${val}</span></td>`;
+        }
+      }
+      rows += `<td><span class="${s.hit ? 'badge-hit' : 'badge-fault'}">${s.hit ? 'Hit' : 'Fault'}</span></td>`;
+      rows += '</tr>';
+    });
+    body.innerHTML = rows;
+  }
+</script>
+</body>
+</html>
